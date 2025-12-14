@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini CRM – Insights</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial;
+      background: #020617;
+      color: #e5e7eb;
+      padding: 20px;
+    }
+    nav a { color: #38bdf8; margin-right: 10px; }
+    .card {
+      border: 1px solid #334155;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+
+<body>
+<nav>
+  <a href="public.html">Public</a>
+  <a href="staff.html">Staff</a>
+  <a href="insights.html">Insights</a>
+</nav>
+
+<h2>Live Metrics</h2>
+
+<div class="card">Total Leads: <span id="total">0</span></div>
+<div class="card">Pipeline Value (€): <span id="value">0</span></div>
+<div class="card">Conversion Rate: <span id="conv">0%</span></div>
+<div class="card">New (Last 24h): <span id="new24">0</span></div>
+
+<ul id="stages"></ul>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    onSnapshot
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBwoLSL4GsuwEnwTBCkh_Wd2OnkWWfKzTQ",
+    authDomain: "test-crm-ac324.firebaseapp.com",
+    projectId: "test-crm-ac324",
+    storageBucket: "test-crm-ac324.firebasestorage.app",
+    messagingSenderId: "707091476964",
+    appId: "1:707091476964:web:c6fed32536ce0dae66d7f1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  onSnapshot(collection(db,"leads"), snap => {
+    let total=0, value=0, won=0, new24=0;
+    const stages={};
+    const now=Date.now();
+
+    snap.forEach(d=>{
+      const l=d.data();
+      total++;
+      stages[l.stage]=(stages[l.stage]||0)+1;
+      if(l.stage!=="Lost") value+=l.value||0;
+      if(l.stage==="Won") won++;
+      if(l.createdAt && now-l.createdAt.toDate().getTime()<86400000) new24++;
+    });
+
+    total && (conv.textContent=((won/total)*100).toFixed(1)+"%");
+    document.getElementById("total").textContent=total;
+    document.getElementById("value").textContent=value;
+    document.getElementById("new24").textContent=new24;
+
+    stagesEl.innerHTML=Object.entries(stages)
+      .map(([k,v])=>`<li>${k}: ${v}</li>`).join("");
+  });
+
+  const stagesEl=document.getElementById("stages");
+  const conv=document.getElementById("conv");
+</script>
+</body>
+</html>
