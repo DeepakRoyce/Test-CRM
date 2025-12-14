@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini CRM – Staff Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #020617;
+      color: #e5e7eb;
+      padding: 20px;
+    }
+    nav a { color: #38bdf8; margin-right: 10px; }
+    .hidden { display: none; }
+    .card {
+      background: #020617;
+      border: 1px solid #334155;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      margin-top: 5px;
+      padding: 6px;
+    }
+    button {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+<nav>
+  <a href="public.html">Public</a>
+  <a href="staff.html">Staff</a>
+  <a href="insights.html">Insights</a>
+</nav>
+
+<div id="login">
+  <h2>Staff Login</h2>
+  <input id="user" placeholder="Username">
+  <input id="pass" type="password" placeholder="Password">
+  <button id="loginBtn">Login</button>
+</div>
+
+<div id="app" class="hidden">
+  <h2>Live Leads</h2>
+  <div id="list"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    query,
+    orderBy,
+    onSnapshot,
+    updateDoc,
+    doc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBwoLSL4GsuwEnwTBCkh_Wd2OnkWWfKzTQ",
+    authDomain: "test-crm-ac324.firebaseapp.com",
+    projectId: "test-crm-ac324",
+    storageBucket: "test-crm-ac324.firebasestorage.app",
+    messagingSenderId: "707091476964",
+    appId: "1:707091476964:web:c6fed32536ce0dae66d7f1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  loginBtn.onclick = () => {
+    if (user.value === "staff" && pass.value === "ncicloud") {
+      login.classList.add("hidden");
+      app.classList.remove("hidden");
+      loadLeads();
+    } else {
+      alert("Invalid credentials");
+    }
+  };
+
+  function loadLeads() {
+    const q = query(collection(db, "leads"), orderBy("createdAt", "desc"));
+
+    onSnapshot(q, (snap) => {
+      list.innerHTML = "";
+      snap.forEach(d => {
+        const l = d.data();
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          <strong>${l.name}</strong> – ${l.company}<br>
+          €${l.value}
+          <select>
+            ${["New","Contacted","Qualified","Proposal","Won","Lost"]
+              .map(s => `<option ${l.stage===s?"selected":""}>${s}</option>`).join("")}
+          </select>
+          <input placeholder="Owner" value="${l.owner}">
+          <textarea placeholder="Notes">${l.notes}</textarea>
+          <button>Save</button>
+        `;
+
+        card.querySelector("button").onclick = async () => {
+          await updateDoc(doc(db,"leads",d.id), {
+            stage: card.querySelector("select").value,
+            owner: card.querySelector("input").value,
+            notes: card.querySelector("textarea").value,
+            updatedAt: serverTimestamp()
+          });
+        };
+
+        list.appendChild(card);
+      });
+    });
+  }
+</script>
+</body>
+</html>
