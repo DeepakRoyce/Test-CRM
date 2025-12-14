@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini CRM – Public Lead Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      max-width: 500px;
+      margin: auto;
+      padding: 30px;
+    }
+    h1 { margin-bottom: 10px; }
+    a { color: #38bdf8; margin-right: 10px; }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+    }
+    button {
+      background: #22c55e;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .msg.success { color: #22c55e; }
+    .msg.error { color: #ef4444; }
+  </style>
+</head>
+
+<body>
+  <nav>
+    <a href="public.html">Public</a>
+    <a href="staff.html">Staff</a>
+    <a href="insights.html">Insights</a>
+  </nav>
+
+  <h1>Submit a Sales Lead</h1>
+
+  <form id="leadForm">
+    <input id="name" placeholder="Full Name" required>
+    <input id="email" type="email" placeholder="Email" required>
+    <input id="company" placeholder="Company" required>
+    <input id="value" type="number" placeholder="Estimated Value (€)" min="1" required>
+    <button type="submit">Submit Lead</button>
+  </form>
+
+  <p id="feedback" class="msg"></p>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBwoLSL4GsuwEnwTBCkh_Wd2OnkWWfKzTQ",
+    authDomain: "test-crm-ac324.firebaseapp.com",
+    projectId: "test-crm-ac324",
+    storageBucket: "test-crm-ac324.firebasestorage.app",
+    messagingSenderId: "707091476964",
+    appId: "1:707091476964:web:c6fed32536ce0dae66d7f1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const form = document.getElementById("leadForm");
+  const feedback = document.getElementById("feedback");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const company = document.getElementById("company").value.trim();
+    const value = Number(document.getElementById("value").value);
+
+    if (!name || !email || !company || value <= 0) {
+      feedback.textContent = "Please complete all fields correctly.";
+      feedback.className = "msg error";
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "leads"), {
+        name,
+        email,
+        company,
+        value,
+        stage: "New",
+        owner: "",
+        notes: "",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      feedback.textContent = "Lead submitted successfully.";
+      feedback.className = "msg success";
+      form.reset();
+    } catch (err) {
+      feedback.textContent = "Error submitting lead.";
+      feedback.className = "msg error";
+      console.error(err);
+    }
+  });
+</script>
+</body>
+</html>
